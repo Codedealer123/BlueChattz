@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login / Signup</title>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin: 0.5rem 0;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button.signup {
+      background-color: #28a745;
+    }
+    button:hover {
+      opacity: 0.95;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Login or Sign Up</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <input type="number" id="roomNumber" placeholder="Room Number" />
+    <button onclick="login()">Login</button>
+    <button class="signup" onclick="signup()">Sign Up</button>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword
+    } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
+
+    // 🔧 Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCLazp2qv4DNxsMHG8qOFSOcjEjL27MVjk",
+      authDomain: "bluechatz-cdgamez.firebaseapp.com",
+      projectId: "bluechatz-cdgamez",
+      storageBucket: "bluechatz-cdgamez.firebasestorage.app",
+      messagingSenderId: "656327817979",
+      appId: "1:656327817979:web:d659d8a6db013b3ed9ce5e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    function getFormValues() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const roomNumber = document.getElementById("roomNumber").value.trim();
+      return { email, password, roomNumber };
+    }
+
+    window.login = function () {
+      const { email, password, roomNumber } = getFormValues();
+      if (!email || !password || !roomNumber) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          window.location.href = `chat.html?roomNumber=${roomNumber}`;
+        })
+        .catch((error) => {
+          alert("Login failed: " + error.message);
+        });
+    };
+
+    window.signup = function () {
+      const { email, password, roomNumber } = getFormValues();
+      if (!email || !password || !roomNumber) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      createUserWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          alert("Account created and signed in!");
+          window.location.href = `chat.html?roomNumber=${roomNumber}`;
+        })
+        .catch((err) => {
+          alert("Signup failed: " + err.message);
+        });
+    };
+  </script>
+</body>
+</html>
