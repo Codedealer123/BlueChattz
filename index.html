@@ -1,123 +1,259 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Login / Signup</title>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web Game IDE — HTML</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      padding: 2rem;
+    :root{
+      --hue: 210;
+      --bg: hsl(var(--hue) 20% 8%);
+      --panel: hsl(var(--hue) 20% 12% / .7);
+      --text: #e5e7eb;
+      --muted: #a1a1aa;
+      --border: 1px solid hsl(var(--hue) 10% 45% / .25);
+      --accent: hsl(calc(var(--hue) + 120) 80% 45%);
+      --danger: #ef4444;
     }
-    .container {
-      max-width: 400px;
-      margin: auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;color:var(--text);
+      font:13px/1.45 system-ui,Segoe UI,Roboto,Inter,sans-serif;
+      background:
+        radial-gradient(1200px 400px at 10% -10%, hsl(var(--hue) 50% 20% /.35), transparent),
+        radial-gradient(1000px 500px at 120% 10%, hsl(calc(var(--hue) + 40) 60% 25% /.25), transparent),
+        var(--bg);
+      background-attachment:fixed;
     }
-    input {
-      width: 100%;
-      padding: 0.75rem;
-      margin: 0.5rem 0;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
-    button {
-      width: 100%;
-      padding: 0.75rem;
-      margin-top: 0.5rem;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button.signup {
-      background-color: #28a745;
-    }
-    button:hover {
-      opacity: 0.95;
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
+    .toolbar{position:sticky;top:0;z-index:10;display:flex;gap:.6rem;align-items:center;padding:.6rem .8rem;border-bottom:var(--border);background:linear-gradient(90deg,var(--panel),transparent)}
+    .brand{font-weight:800;letter-spacing:.4px}
+    .spacer{flex:1}
+    .btn{background:var(--accent);border:0;color:white;padding:.5rem .8rem;border-radius:.7rem;cursor:pointer;box-shadow:0 6px 20px hsl(calc(var(--hue)+130) 80% 40%/.35)}
+    .mini{background:hsl(var(--hue) 18% 30%);color:#e5e7eb;border:0;padding:.3rem .6rem;border-radius:.35rem;cursor:pointer;font-size:11px}
+    .chk{display:flex;align-items:center;gap:.4rem;font-size:12px;color:#cbd5e1}
+    .hue{display:flex;align-items:center;gap:.5rem}
+    .hue input[type=range]{width:160px}
+
+    .wrap{display:flex;flex-direction:column;height:calc(100vh - 52px)}
+    .tabbar{display:flex;border-bottom:var(--border);background:hsl(var(--hue) 20% 12%/.65)}
+    .tabbar button{background:transparent;border:0;color:#cbd5e1;padding:.55rem .9rem;cursor:pointer;font-weight:600}
+    .tabbar .active{color:white;background:hsl(var(--hue) 22% 14%/.8)}
+
+    .main{flex:1;display:grid;grid-template-columns:1fr;min-height:0}
+
+    /* Code panel */
+    #codePanel{display:flex;flex-direction:column;min-height:0}
+    .editorTabs{display:flex;border-bottom:var(--border);background:hsl(var(--hue) 20% 10%/.65)}
+    .editorTabs button{background:transparent;border:0;color:#cbd5e1;padding:.45rem .7rem;cursor:pointer}
+    .editorTabs .active{background:hsl(var(--hue) 20% 14%/.8);color:white}
+    .editors{flex:1;display:grid}
+    textarea.code{width:100%;height:100%;resize:none;border:0;outline:0;padding:.8rem;background:hsl(var(--hue) 25% 6%);color:#f3f4f6;font:12.5px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .help{padding:.5rem .8rem;color:#aab2c6;border-top:var(--border);background:hsl(var(--hue) 20% 10%/.65)}
+
+    /* Preview panel */
+    #previewPanel{display:none;flex-direction:column;min-height:0}
+    .stage{position:relative;flex:1;min-height:0;background:hsl(var(--hue) 18% 12%/.5);border-bottom:var(--border);display:grid;place-items:center;overflow:hidden}
+    .frame{outline:var(--border);box-shadow:0 16px 40px rgba(0,0,0,.45)}
+    #preview{display:block;border:0;background:#0f1117;position:absolute;top:0;left:0;transform-origin:top left}
+
+    .console{display:flex;flex-direction:column;background:#000;min-height:120px;max-height:40vh}
+    .consoleHead{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #222;padding:.35rem .5rem;color:#cbd5e1;font-size:12px}
+    .consoleBody{flex:1;overflow:auto;padding:.35rem .5rem;color:#d1fae5;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .log-err{color:var(--danger)}
+
+    @media (max-width:900px){ textarea.code{font-size:12px} }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Login or Sign Up</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <input type="number" id="roomNumber" placeholder="Room Number" />
-    <button onclick="login()">Login</button>
-    <button class="signup" onclick="signup()">Sign Up</button>
+  <div class="toolbar">
+    <div class="brand">Web Game IDE</div>
+    <div class="hue"><small>Theme hue</small><input id="hue" type="range" min="0" max="360" value="210" />
+      <label class="chk"><input type="checkbox" id="pulse"> Pulse</label></div>
+    <div class="spacer"></div>
+    <label class="chk"><input type="checkbox" id="autoRun" checked> Auto‑run</label>
+    <button id="run" class="btn">▶ Run</button>
+    <button id="exportHtml" class="mini">Export HTML</button>
+    <button id="runTests" class="mini">Run tests</button>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword
-    } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
+  <div class="wrap">
+    <div class="tabbar">
+      <button class="tabBtn active" data-mode="code">Code</button>
+      <button class="tabBtn" data-mode="preview">Preview</button>
+    </div>
 
-    // 🔧 Replace with your Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyCLazp2qv4DNxsMHG8qOFSOcjEjL27MVjk",
-      authDomain: "bluechatz-cdgamez.firebaseapp.com",
-      projectId: "bluechatz-cdgamez",
-      storageBucket: "bluechatz-cdgamez.firebasestorage.app",
-      messagingSenderId: "656327817979",
-      appId: "1:656327817979:web:d659d8a6db013b3ed9ce5e"
-    };
+    <div class="main">
+      <section id="codePanel">
+        <div class="editorTabs">
+          <button class="eTab active" data-file="index.html">HTML</button>
+          <button class="eTab" data-file="style.css">CSS</button>
+          <button class="eTab" data-file="game.js">JS</button>
+        </div>
+        <div class="editors">
+          <textarea id="htmlEditor" class="code"></textarea>
+          <textarea id="cssEditor" class="code" style="display:none"></textarea>
+          <textarea id="jsEditor" class="code" style="display:none"></textarea>
+        </div>
+        <div class="help">Tip: The preview uses your <b>index.html</b> (body markup), <b>style.css</b>, and <b>game.js</b>. Make sure your HTML contains a <code>&lt;canvas id="game"&gt;</code>. The preview dynamically scales to the canvas size you set in JS via <code>canvas.width/height</code>.</div>
+      </section>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
+      <section id="previewPanel">
+        <div class="stage"><div class="frame"><iframe id="preview" title="preview" sandbox="allow-scripts allow-pointer-lock"></iframe></div></div>
+        <div class="console">
+          <div class="consoleHead"><span>Console</span><button id="clearConsole" class="mini">Clear</button></div>
+          <div id="consoleLog" class="consoleBody"></div>
+        </div>
+      </section>
+    </div>
+  </div>
 
-    function getFormValues() {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const roomNumber = document.getElementById("roomNumber").value.trim();
-      return { email, password, roomNumber };
+  <script>
+    // ---------- Defaults ----------
+    const DEMO_HTML = `<canvas id="game" width="640" height="360"></canvas>`;
+    const DEMO_CSS = `html, body { height:100%; margin:0 }\nbody{ background:#2b2f3a; display:grid; place-items:center }\n#game{ background:#0f1117; box-shadow:0 10px 30px rgba(0,0,0,.5) }\n`;
+    const DEMO_JS = `const canvas = document.getElementById('game');\nconst ctx = canvas.getContext('2d');\nlet x=10,y=10,vx=3,vy=2.4,s=40,h=0;\nfunction frame(){\n  ctx.fillStyle = '#11151c'; ctx.fillRect(0,0,canvas.width,canvas.height);\n  x+=vx; y+=vy; h=(h+1)%360;\n  if(x<0||x+s>canvas.width) vx*=-1; if(y<0||y+s>canvas.height) vy*=-1;\n  ctx.fillStyle = \`hsl(\${h} 80% 60%)\`; ctx.fillRect(x,y,s,s);\n  requestAnimationFrame(frame);\n}\nconsole.log('Game starting…'); frame();\n`;
+
+    const LS_KEY = 'wg-ide-3files-v1';
+
+    // ---------- State ----------
+    let files = loadFiles();
+    let activeFile = 'index.html';
+    let innerW = 640, innerH = 360; // reported canvas size
+    let rafHue = null, tHue = 0;
+
+    // ---------- Elements ----------
+    const htmlEditor = document.getElementById('htmlEditor');
+    const cssEditor = document.getElementById('cssEditor');
+    const jsEditor = document.getElementById('jsEditor');
+    const eTabs = [...document.querySelectorAll('.eTab')];
+    const tabBtns = [...document.querySelectorAll('.tabBtn')];
+    const codePanel = document.getElementById('codePanel');
+    const previewPanel = document.getElementById('previewPanel');
+
+    const runBtn = document.getElementById('run');
+    const exportBtn = document.getElementById('exportHtml');
+    const runTestsBtn = document.getElementById('runTests');
+    const autoRun = document.getElementById('autoRun');
+    const hueRange = document.getElementById('hue');
+    const pulseChk = document.getElementById('pulse');
+
+    const preview = document.getElementById('preview');
+    const consoleLog = document.getElementById('consoleLog');
+    const clearConsole = document.getElementById('clearConsole');
+    const stage = document.querySelector('.stage');
+
+    // ---------- Init ----------
+    htmlEditor.value = files['index.html'] || DEMO_HTML;
+    cssEditor.value  = files['style.css']  || DEMO_CSS;
+    jsEditor.value   = files['game.js']    || DEMO_JS;
+
+    setActiveFile('index.html');
+    switchMode('preview'); // show working preview by default
+    run();
+
+    // ---------- UI Wiring ----------
+    eTabs.forEach(b => b.addEventListener('click', ()=> setActiveFile(b.dataset.file)));
+    tabBtns.forEach(b => b.addEventListener('click', ()=> switchMode(b.dataset.mode)));
+
+    htmlEditor.addEventListener('input', onEdit);
+    cssEditor.addEventListener('input', onEdit);
+    jsEditor.addEventListener('input', onEdit);
+
+    runBtn.addEventListener('click', ()=>{ if(currentMode()!=='preview') switchMode('preview'); run(); });
+    exportBtn.addEventListener('click', exportHTML);
+    runTestsBtn.addEventListener('click', runTests);
+
+    clearConsole.addEventListener('click', ()=> consoleLog.innerHTML='');
+
+    window.addEventListener('resize', scaleIframe);
+
+    hueRange.addEventListener('input', e=> applyHue(e.target.value));
+    pulseChk.addEventListener('change', ()=>{ if(pulseChk.checked) pulse(); else cancelPulse(); });
+
+    // ---------- Functions ----------
+    function loadFiles(){
+      try{ const raw = localStorage.getItem(LS_KEY); return raw? JSON.parse(raw): {'index.html': DEMO_HTML, 'style.css': DEMO_CSS, 'game.js': DEMO_JS}; }
+      catch{ return {'index.html': DEMO_HTML, 'style.css': DEMO_CSS, 'game.js': DEMO_JS}; }
+    }
+    function saveFiles(){ files['index.html']=htmlEditor.value; files['style.css']=cssEditor.value; files['game.js']=jsEditor.value; localStorage.setItem(LS_KEY, JSON.stringify(files)); }
+
+    function setActiveFile(name){
+      activeFile = name;
+      eTabs.forEach(t=> t.classList.toggle('active', t.dataset.file===name));
+      htmlEditor.style.display = name==='index.html'? 'block':'none';
+      cssEditor.style.display  = name==='style.css'?  'block':'none';
+      jsEditor.style.display   = name==='game.js'?    'block':'none';
+    }
+    function currentMode(){ return document.querySelector('.tabBtn.active')?.dataset.mode; }
+    function switchMode(mode){ tabBtns.forEach(x=>x.classList.toggle('active', x.dataset.mode===mode)); codePanel.style.display = mode==='code'? 'flex':'none'; previewPanel.style.display = mode==='preview'? 'flex':'none'; if(mode==='preview' && autoRun.checked) run(); }
+
+    let editTimer=null; function onEdit(){ saveFiles(); if(!autoRun.checked) return; clearTimeout(editTimer); editTimer=setTimeout(()=>{ if(currentMode()==='preview') run(); }, 300); }
+
+    function clearLog(){ consoleLog.innerHTML=''; }
+    function log(msg, err=false){ const d=document.createElement('div'); d.textContent=msg; if(err) d.className='log-err'; consoleLog.appendChild(d); consoleLog.scrollTop = consoleLog.scrollHeight; }
+
+    // Message handling from iframe
+    window.addEventListener('message', e=>{
+      const d = e?.data || {}; 
+      if(d.__IDE__==='console'){ log(d.msg, d.type==='err'); }
+      if(d.__IDE__==='canvas' && d.w>0 && d.h>0){ innerW=d.w; innerH=d.h; scaleIframe(); }
+    });
+
+    function buildDoc(){
+      const injected = `\n<script>\n(function(){\n  const push=(type,args)=> parent.postMessage({__IDE__:'console',type,msg:Array.from(args).join(' ')},'*');\n  const ol=console.log, oe=console.error;\n  console.log=function(){ push('log',arguments); ol.apply(console,arguments) };\n  console.error=function(){ push('err',arguments); oe.apply(console,arguments) };\n  window.addEventListener('error', e=> push('err',[e.message+' ('+e.filename+':'+e.lineno+')']));\n  function attach(){\n    const c=document.getElementById('game');\n    if(!c){ setTimeout(attach, 100); return; }\n    function report(){ parent.postMessage({__IDE__:'canvas', w:c.width||800, h:c.height||450}, '*'); }\n    new MutationObserver(report).observe(c, { attributes:true, attributeFilter:['width','height'] });\n    report();\n  }\n  attach();\n})();\n<\/script>`;
+      return `<!DOCTYPE html><html><head><meta charset='utf-8'/>\n<style>${cssEditor.value}</style></head>\n<body>\n${htmlEditor.value}\n${injected}\n<script>try{\n${jsEditor.value}\nrequestAnimationFrame(()=>{ const c=document.getElementById('game'); if(c) parent.postMessage({__IDE__:'canvas', w:c.width, h:c.height}, '*'); });\n}catch(e){console.error(e.message)}<\/script>\n</body></html>`;
     }
 
-    window.login = function () {
-      const { email, password, roomNumber } = getFormValues();
-      if (!email || !password || !roomNumber) {
-        alert("Please fill in all fields.");
-        return;
-      }
+    function run(){
+      clearLog();
+      const src = buildDoc();
+      const blob = new Blob([src], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      preview.onload = ()=>{ URL.revokeObjectURL(url); };
+      preview.src = url;
+    }
 
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          window.location.href = `chat.html?roomNumber=${roomNumber}`;
-        })
-        .catch((error) => {
-          alert("Login failed: " + error.message);
-        });
-    };
+    function scaleIframe(){
+      const cw = stage.clientWidth, ch = stage.clientHeight; if(!cw||!ch) return;
+      const s = Math.min(cw/innerW, ch/innerH);
+      preview.style.width = innerW + 'px';
+      preview.style.height = innerH + 'px';
+      preview.style.transform = `scale(${s})`;
+    }
 
-    window.signup = function () {
-      const { email, password, roomNumber } = getFormValues();
-      if (!email || !password || !roomNumber) {
-        alert("Please fill in all fields.");
-        return;
-      }
+    function exportHTML(){
+      const content = buildDoc();
+      const blob = new Blob([content], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'web-game.html'; a.click();
+      setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    }
 
-      createUserWithEmailAndPassword(auth, email, password)
-        .then(() => {
-          alert("Account created and signed in!");
-          window.location.href = `chat.html?roomNumber=${roomNumber}`;
-        })
-        .catch((err) => {
-          alert("Signup failed: " + err.message);
-        });
-    };
+    // Theme hue controls
+    function applyHue(v){ document.documentElement.style.setProperty('--hue', v); }
+    function pulse(){ cancelPulse(); const loop=()=>{ tHue+=0.7; const v=(parseFloat(hueRange.value)+Math.sin(tHue/20)*30+360)%360; applyHue(v.toFixed(1)); rafHue=requestAnimationFrame(loop); }; rafHue=requestAnimationFrame(loop); }
+    function cancelPulse(){ if(rafHue) cancelAnimationFrame(rafHue); rafHue=null; }
+
+    // ---------- Tests ----------
+    function assert(name, pass, extra){ log(`${pass?'✅':'❌'} ${name}${extra? ' — '+extra:''}`, !pass); }
+    function runTests(){
+      // Static tests on builder
+      const doc = buildDoc();
+      assert('injects CSS', doc.includes('<style>') && doc.includes(cssEditor.value.slice(0,10)));
+      assert('injects HTML', doc.includes(htmlEditor.value.trim().slice(0,8)));
+      assert('injects JS', doc.includes(jsEditor.value.trim().slice(0,8)));
+      assert('captures console', doc.includes("__IDE__:'console'"));
+      assert('reports canvas size', doc.includes("__IDE__:'canvas'"));
+
+      // Runtime test: wait briefly for canvas postMessage
+      let gotSize=false; const onMsg=(e)=>{ if(e?.data?.__IDE__==='canvas'){ gotSize=true; window.removeEventListener('message', onMsg); assert('preview reported canvas size (runtime)', true); } };
+      window.addEventListener('message', onMsg);
+      if(currentMode()!=='preview') switchMode('preview');
+      run();
+      setTimeout(()=>{ if(!gotSize){ assert('preview reported canvas size (runtime)', false, 'no message in 1500ms'); window.removeEventListener('message', onMsg);} }, 1500);
+    }
   </script>
 </body>
 </html>
