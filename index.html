@@ -1,218 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Web Game IDE — HTML</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web Game IDE (HTML Version)</title>
   <style>
-    :root{
-      --hue: 210;
-      --bg: hsl(var(--hue) 20% 8%);
-      --panel: hsl(var(--hue) 20% 12% / .7);
-      --text: #e5e7eb;
-      --muted: #a1a1aa;
-      --border: 1px solid hsl(var(--hue) 10% 45% / .25);
-      --accent: hsl(calc(var(--hue) + 120) 80% 45%);
-      --danger: #ef4444;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;color:var(--text);
-      font:13px/1.45 system-ui,Segoe UI,Roboto,Inter,sans-serif;
-      background:
-        radial-gradient(1200px 400px at 10% -10%, hsl(var(--hue) 50% 20% /.35), transparent),
-        radial-gradient(1000px 500px at 120% 10%, hsl(calc(var(--hue) + 40) 60% 25% /.25), transparent),
-        var(--bg);
-      background-attachment:fixed;
-    }
-    .toolbar{position:sticky;top:0;z-index:10;display:flex;gap:.6rem;align-items:center;padding:.6rem .8rem;border-bottom:var(--border);background:linear-gradient(90deg,var(--panel),transparent)}
-    .brand{font-weight:800;letter-spacing:.4px}
-    .spacer{flex:1}
-    .btn{background:var(--accent);border:0;color:white;padding:.5rem .8rem;border-radius:.7rem;cursor:pointer;box-shadow:0 6px 20px hsl(calc(var(--hue)+130) 80% 40%/.35)}
-    .mini{background:hsl(var(--hue) 18% 30%);color:#e5e7eb;border:0;padding:.3rem .6rem;border-radius:.35rem;cursor:pointer;font-size:11px}
-    .chk{display:flex;align-items:center;gap:.4rem;font-size:12px;color:#cbd5e1}
-    .hue{display:flex;align-items:center;gap:.5rem}
-    .hue input[type=range]{width:160px}
+    :root{ --border: rgba(255,255,255,.08); }
+    body { margin:0; font-family: sans-serif; background:#0b0d12; color:#eee; height:100vh; display:flex; flex-direction:column; }
+    header { display:flex; align-items:center; justify-content:space-between; background:#111827; padding:0.5rem 1rem; position:sticky; top:0; z-index:5; border-bottom:1px solid var(--border); }
+    header h1 { margin:0; font-size:1rem; }
+    .btn { background:#18b27a; color:#fff; border:none; border-radius:6px; padding:0.45rem 0.75rem; cursor:pointer; }
+    .tabs { display:flex; border-bottom:1px solid var(--border); background:#0e1220; }
+    .tab { flex:1; text-align:center; padding:0.55rem; cursor:pointer; background:#121827; color:#aab2c6; font-weight:600; }
+    .tab.active { background:#1f2435; color:#fff; }
+    .panels { flex:1; display:flex; flex-direction:column; min-height:0; }
+    .panel { flex:1; display:none; min-height:0; }
+    .panel.active { display:flex; flex-direction:column; min-height:0; }
+    textarea { flex:1; width:100%; resize:none; border:none; outline:none; padding:0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; background:#0b0d12; color:#eee; }
 
-    .wrap{display:flex;flex-direction:column;height:calc(100vh - 52px)}
-    .tabbar{display:flex;border-bottom:var(--border);background:hsl(var(--hue) 20% 12%/.65)}
-    .tabbar button{background:transparent;border:0;color:#cbd5e1;padding:.55rem .9rem;cursor:pointer;font-weight:600}
-    .tabbar .active{color:white;background:hsl(var(--hue) 22% 14%/.8)}
+    /* Preview layout with responsive scaling */
+    .stage { position:relative; flex:1; min-height:0; background:#0f1117; display:grid; place-items:center; border-bottom:1px solid var(--border); overflow:hidden; }
+    .stage-inner { position:relative; width:100%; height:100%; display:grid; place-items:center; }
+    iframe#preview { position:absolute; top:0; left:0; transform-origin: top left; border:none; background:#0b0d12; box-shadow: 0 16px 40px rgba(0,0,0,.45); outline:1px solid var(--border); }
 
-    .main{flex:1;display:grid;grid-template-columns:1fr;min-height:0}
-
-    /* Code panel */
-    #codePanel{display:flex;flex-direction:column;min-height:0}
-    .editorTabs{display:flex;border-bottom:var(--border);background:hsl(var(--hue) 20% 10%/.65)}
-    .editorTabs button{background:transparent;border:0;color:#cbd5e1;padding:.45rem .7rem;cursor:pointer}
-    .editorTabs .active{background:hsl(var(--hue) 20% 14%/.8);color:white}
-    .editors{flex:1;display:grid}
-    textarea.code{width:100%;height:100%;resize:none;border:0;outline:0;padding:.8rem;background:hsl(var(--hue) 25% 6%);color:#f3f4f6;font:12.5px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .help{padding:.5rem .8rem;color:#aab2c6;border-top:var(--border);background:hsl(var(--hue) 20% 10%/.65)}
-
-    /* Preview panel */
-    #previewPanel{display:none;flex-direction:column;min-height:0}
-    .stage{position:relative;flex:1;min-height:0;background:hsl(var(--hue) 18% 12%/.5);border-bottom:var(--border);display:grid;place-items:center;overflow:hidden}
-    .frame{outline:var(--border);box-shadow:0 16px 40px rgba(0,0,0,.45)}
-    #preview{display:block;border:0;background:#0f1117;position:absolute;top:0;left:0;transform-origin:top left}
-
-    .console{display:flex;flex-direction:column;background:#000;min-height:120px;max-height:40vh}
-    .consoleHead{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #222;padding:.35rem .5rem;color:#cbd5e1;font-size:12px}
-    .consoleBody{flex:1;overflow:auto;padding:.35rem .5rem;color:#d1fae5;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .log-err{color:var(--danger)}
-
-    @media (max-width:900px){ textarea.code{font-size:12px} }
+    .console { background:#000; color:#d1fae5; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; height:140px; overflow:auto; padding:0.5rem; }
+    .log-err{ color:#f87171; }
+    .toolbar-right { display:flex; gap:.5rem; align-items:center; }
+    label { font-size:12px; color:#cbd5e1; }
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <div class="brand">Web Game IDE</div>
-    <div class="hue"><small>Theme hue</small><input id="hue" type="range" min="0" max="360" value="210" />
-      <label class="chk"><input type="checkbox" id="pulse"> Pulse</label></div>
-    <div class="spacer"></div>
-    <label class="chk"><input type="checkbox" id="autoRun" checked> Auto‑run</label>
-    <button id="run" class="btn">▶ Run</button>
-    <button id="exportHtml" class="mini">Export HTML</button>
-    <button id="runTests" class="mini">Run tests</button>
+  <header>
+    <h1>Web Game IDE</h1>
+    <div class="toolbar-right">
+      <label><input type="checkbox" id="autoRun" checked> Auto-run</label>
+      <button class="btn" id="run">▶ Run</button>
+      <button class="btn" id="exportBtn">⬇ Export</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="code">Code</div>
+    <div class="tab" data-tab="preview">Preview</div>
   </div>
 
-  <div class="wrap">
-    <div class="tabbar">
-      <button class="tabBtn active" data-mode="code">Code</button>
-      <button class="tabBtn" data-mode="preview">Preview</button>
+  <div class="panels">
+    <div class="panel active" id="codePanel">
+      <textarea id="codeArea">// Demo works with or WITHOUT a &lt;canvas id="game"&gt;.
+// If you use a canvas, the preview scales to canvas.width/height.
+// If you don't, it scales to the page content size.
+
+// EXAMPLE A: No canvas — draw DOM elements
+const root = document.getElementById('root');
+if(root){
+  root.innerHTML = '';
+  const box = document.createElement('div');
+  box.textContent = 'Hello DOM game!';
+  box.style.cssText = 'width:480px;height:270px;display:grid;place-items:center;background:#1e293b;color:#fff;border:2px solid #94a3b8;font:600 18px system-ui;';
+  root.appendChild(box);
+}
+
+// EXAMPLE B: Canvas — uncomment to try canvas
+/*
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = 640; canvas.height = 360;
+let x=10,y=10,vx=2.5,vy=2.0,size=40,h=0;
+function frame(){
+  ctx.fillStyle = '#11151c';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  x+=vx; y+=vy; h=(h+1)%360;
+  if(x<0||x+size>canvas.width) vx*=-1;
+  if(y<0||y+size>canvas.height) vy*=-1;
+  ctx.fillStyle = `hsl(${h} 80% 60%)`;
+  ctx.fillRect(x,y,size,size);
+  requestAnimationFrame(frame);
+}
+frame();
+*/</textarea>
     </div>
 
-    <div class="main">
-      <section id="codePanel">
-        <div class="editorTabs">
-          <button class="eTab active" data-file="index.html">HTML</button>
-          <button class="eTab" data-file="style.css">CSS</button>
-          <button class="eTab" data-file="game.js">JS</button>
+    <div class="panel" id="previewPanel">
+      <div class="stage">
+        <div class="stage-inner">
+          <iframe id="preview" title="preview" sandbox="allow-scripts allow-pointer-lock"></iframe>
         </div>
-        <div class="editors">
-          <textarea id="htmlEditor" class="code"></textarea>
-          <textarea id="cssEditor" class="code" style="display:none"></textarea>
-          <textarea id="jsEditor" class="code" style="display:none"></textarea>
-        </div>
-        <div class="help">Tip: The preview uses your <b>index.html</b> (body markup), <b>style.css</b>, and <b>game.js</b>. Make sure your HTML contains a <code>&lt;canvas id="game"&gt;</code>. The preview dynamically scales to the canvas size you set in JS via <code>canvas.width/height</code>.</div>
-      </section>
-
-      <section id="previewPanel">
-        <div class="stage"><div class="frame"><iframe id="preview" title="preview" sandbox="allow-scripts allow-pointer-lock"></iframe></div></div>
-        <div class="console">
-          <div class="consoleHead"><span>Console</span><button id="clearConsole" class="mini">Clear</button></div>
-          <div id="consoleLog" class="consoleBody"></div>
-        </div>
-      </section>
+      </div>
+      <div class="console" id="consoleLog"></div>
     </div>
   </div>
 
   <script>
-    // ---------- Defaults ----------
-    const DEMO_HTML = `<canvas id="game" width="640" height="360"></canvas>`;
-    const DEMO_CSS = `html, body { height:100%; margin:0 }\nbody{ background:#2b2f3a; display:grid; place-items:center }\n#game{ background:#0f1117; box-shadow:0 10px 30px rgba(0,0,0,.5) }\n`;
-    const DEMO_JS = `const canvas = document.getElementById('game');\nconst ctx = canvas.getContext('2d');\nlet x=10,y=10,vx=3,vy=2.4,s=40,h=0;\nfunction frame(){\n  ctx.fillStyle = '#11151c'; ctx.fillRect(0,0,canvas.width,canvas.height);\n  x+=vx; y+=vy; h=(h+1)%360;\n  if(x<0||x+s>canvas.width) vx*=-1; if(y<0||y+s>canvas.height) vy*=-1;\n  ctx.fillStyle = \`hsl(\${h} 80% 60%)\`; ctx.fillRect(x,y,s,s);\n  requestAnimationFrame(frame);\n}\nconsole.log('Game starting…'); frame();\n`;
+    const codeArea=document.getElementById('codeArea');
+    const runBtn=document.getElementById('run');
+    const autoRun=document.getElementById('autoRun');
+    const exportBtn=document.getElementById('exportBtn');
 
-    const LS_KEY = 'wg-ide-3files-v1';
+    const tabs=document.querySelectorAll('.tab');
+    const panels={ code:document.getElementById('codePanel'), preview:document.getElementById('previewPanel') };
 
-    // ---------- State ----------
-    let files = loadFiles();
-    let activeFile = 'index.html';
-    let innerW = 640, innerH = 360; // reported canvas size
-    let rafHue = null, tHue = 0;
+    const preview=document.getElementById('preview');
+    const consoleLog=document.getElementById('consoleLog');
+    const stage=document.querySelector('.stage');
 
-    // ---------- Elements ----------
-    const htmlEditor = document.getElementById('htmlEditor');
-    const cssEditor = document.getElementById('cssEditor');
-    const jsEditor = document.getElementById('jsEditor');
-    const eTabs = [...document.querySelectorAll('.eTab')];
-    const tabBtns = [...document.querySelectorAll('.tabBtn')];
-    const codePanel = document.getElementById('codePanel');
-    const previewPanel = document.getElementById('previewPanel');
+    let innerW=800, innerH=450; // measured content size fallback
 
-    const runBtn = document.getElementById('run');
-    const exportBtn = document.getElementById('exportHtml');
-    const runTestsBtn = document.getElementById('runTests');
-    const autoRun = document.getElementById('autoRun');
-    const hueRange = document.getElementById('hue');
-    const pulseChk = document.getElementById('pulse');
-
-    const preview = document.getElementById('preview');
-    const consoleLog = document.getElementById('consoleLog');
-    const clearConsole = document.getElementById('clearConsole');
-    const stage = document.querySelector('.stage');
-
-    // ---------- Init ----------
-    htmlEditor.value = files['index.html'] || DEMO_HTML;
-    cssEditor.value  = files['style.css']  || DEMO_CSS;
-    jsEditor.value   = files['game.js']    || DEMO_JS;
-
-    setActiveFile('index.html');
-    switchMode('preview'); // show working preview by default
-    run();
-
-    // ---------- UI Wiring ----------
-    eTabs.forEach(b => b.addEventListener('click', ()=> setActiveFile(b.dataset.file)));
-    tabBtns.forEach(b => b.addEventListener('click', ()=> switchMode(b.dataset.mode)));
-
-    htmlEditor.addEventListener('input', onEdit);
-    cssEditor.addEventListener('input', onEdit);
-    jsEditor.addEventListener('input', onEdit);
-
-    runBtn.addEventListener('click', ()=>{ if(currentMode()!=='preview') switchMode('preview'); run(); });
-    exportBtn.addEventListener('click', exportHTML);
-    runTestsBtn.addEventListener('click', runTests);
-
-    clearConsole.addEventListener('click', ()=> consoleLog.innerHTML='');
-
-    window.addEventListener('resize', scaleIframe);
-
-    hueRange.addEventListener('input', e=> applyHue(e.target.value));
-    pulseChk.addEventListener('change', ()=>{ if(pulseChk.checked) pulse(); else cancelPulse(); });
-
-    // ---------- Functions ----------
-    function loadFiles(){
-      try{ const raw = localStorage.getItem(LS_KEY); return raw? JSON.parse(raw): {'index.html': DEMO_HTML, 'style.css': DEMO_CSS, 'game.js': DEMO_JS}; }
-      catch{ return {'index.html': DEMO_HTML, 'style.css': DEMO_CSS, 'game.js': DEMO_JS}; }
-    }
-    function saveFiles(){ files['index.html']=htmlEditor.value; files['style.css']=cssEditor.value; files['game.js']=jsEditor.value; localStorage.setItem(LS_KEY, JSON.stringify(files)); }
-
-    function setActiveFile(name){
-      activeFile = name;
-      eTabs.forEach(t=> t.classList.toggle('active', t.dataset.file===name));
-      htmlEditor.style.display = name==='index.html'? 'block':'none';
-      cssEditor.style.display  = name==='style.css'?  'block':'none';
-      jsEditor.style.display   = name==='game.js'?    'block':'none';
-    }
-    function currentMode(){ return document.querySelector('.tabBtn.active')?.dataset.mode; }
-    function switchMode(mode){ tabBtns.forEach(x=>x.classList.toggle('active', x.dataset.mode===mode)); codePanel.style.display = mode==='code'? 'flex':'none'; previewPanel.style.display = mode==='preview'? 'flex':'none'; if(mode==='preview' && autoRun.checked) run(); }
-
-    let editTimer=null; function onEdit(){ saveFiles(); if(!autoRun.checked) return; clearTimeout(editTimer); editTimer=setTimeout(()=>{ if(currentMode()==='preview') run(); }, 300); }
-
-    function clearLog(){ consoleLog.innerHTML=''; }
-    function log(msg, err=false){ const d=document.createElement('div'); d.textContent=msg; if(err) d.className='log-err'; consoleLog.appendChild(d); consoleLog.scrollTop = consoleLog.scrollHeight; }
-
-    // Message handling from iframe
-    window.addEventListener('message', e=>{
-      const d = e?.data || {}; 
-      if(d.__IDE__==='console'){ log(d.msg, d.type==='err'); }
-      if(d.__IDE__==='canvas' && d.w>0 && d.h>0){ innerW=d.w; innerH=d.h; scaleIframe(); }
-    });
-
-    function buildDoc(){
-      const injected = `\n<script>\n(function(){\n  const push=(type,args)=> parent.postMessage({__IDE__:'console',type,msg:Array.from(args).join(' ')},'*');\n  const ol=console.log, oe=console.error;\n  console.log=function(){ push('log',arguments); ol.apply(console,arguments) };\n  console.error=function(){ push('err',arguments); oe.apply(console,arguments) };\n  window.addEventListener('error', e=> push('err',[e.message+' ('+e.filename+':'+e.lineno+')']));\n  function attach(){\n    const c=document.getElementById('game');\n    if(!c){ setTimeout(attach, 100); return; }\n    function report(){ parent.postMessage({__IDE__:'canvas', w:c.width||800, h:c.height||450}, '*'); }\n    new MutationObserver(report).observe(c, { attributes:true, attributeFilter:['width','height'] });\n    report();\n  }\n  attach();\n})();\n<\/script>`;
-      return `<!DOCTYPE html><html><head><meta charset='utf-8'/>\n<style>${cssEditor.value}</style></head>\n<body>\n${htmlEditor.value}\n${injected}\n<script>try{\n${jsEditor.value}\nrequestAnimationFrame(()=>{ const c=document.getElementById('game'); if(c) parent.postMessage({__IDE__:'canvas', w:c.width, h:c.height}, '*'); });\n}catch(e){console.error(e.message)}<\/script>\n</body></html>`;
-    }
-
-    function run(){
-      clearLog();
-      const src = buildDoc();
-      const blob = new Blob([src], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      preview.onload = ()=>{ URL.revokeObjectURL(url); };
-      preview.src = url;
-    }
+    tabs.forEach(t=>t.addEventListener('click',()=>{
+      tabs.forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      Object.values(panels).forEach(p=>p.classList.remove('active'));
+      panels[t.dataset.tab].classList.add('active');
+      if(t.dataset.tab==='preview' && autoRun.checked) run();
+    }));
 
     function scaleIframe(){
       const cw = stage.clientWidth, ch = stage.clientHeight; if(!cw||!ch) return;
@@ -221,39 +120,86 @@
       preview.style.height = innerH + 'px';
       preview.style.transform = `scale(${s})`;
     }
+    window.addEventListener('resize', scaleIframe);
 
-    function exportHTML(){
-      const content = buildDoc();
-      const blob = new Blob([content], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'web-game.html'; a.click();
-      setTimeout(()=> URL.revokeObjectURL(url), 1000);
+    function buildDoc(js){
+      // We provide BOTH a #root for DOM games and an optional #game canvas.
+      // Size reporter prefers canvas if found, otherwise uses the page's scroll size via ResizeObserver.
+      return `<!DOCTYPE html><html><head><meta charset='utf-8'/>
+<style>
+  html,body{height:100%;margin:0;background:#12151e;color:#eee}
+  body{display:grid;place-items:center}
+  #root{min-width:800px;min-height:450px}
+  #game{background:#0f1117; box-shadow:0 10px 30px rgba(0,0,0,.5)}
+</style>
+</head><body>
+  <div id="root"></div>
+  <!-- Optional: your JS may use this if you want a canvas -->
+  <canvas id="game" width="800" height="450" style="display:none"></canvas>
+  <script>
+    (function(){
+      const push=(type,args)=> parent.postMessage({__IDE__:'console',type,msg:Array.from(args).join(' ')},'*');
+      const ol=console.log, oe=console.error;
+      console.log=function(){ push('log',arguments); ol.apply(console,arguments) };
+      console.error=function(){ push('err',arguments); oe.apply(console,arguments) };
+      window.addEventListener('error', e=> push('err',[e.message+' ('+e.filename+':'+e.lineno+')']));
+      const preferCanvas = ()=>{ const g=document.getElementById('game'); if(!g) return null; const anyCanvas = g || document.querySelector('canvas'); return anyCanvas || null; };
+      let target = preferCanvas();
+      const report = ()=>{
+        if(target){ parent.postMessage({__IDE__:'size', w: target.width||target.clientWidth||800, h: target.height||target.clientHeight||450}, '*'); }
+        else { const b=document.body; const r=b.getBoundingClientRect(); parent.postMessage({__IDE__:'size', w: Math.ceil(Math.max(document.documentElement.scrollWidth, r.width)), h: Math.ceil(Math.max(document.documentElement.scrollHeight, r.height))}, '*'); }
+      };
+      const ro = new ResizeObserver(()=>{ target=null; report(); });
+      ro.observe(document.body);
+      // Also watch for canvas attribute changes
+      const mo = new MutationObserver(()=>{ target = preferCanvas(); report(); });
+      mo.observe(document.documentElement, { childList:true, subtree:true, attributes:true, attributeFilter:['width','height','style'] });
+      report();
+    })();
+  <\/script>
+  <script>try{
+${js}
+  // After user JS, try showing canvas if it was used
+  const g=document.getElementById('game'); if(g && (g.width||g.height)) g.style.display='block';
+  requestAnimationFrame(()=>{ parent.postMessage({__IDE__:'ping'}, '*'); });
+}catch(e){console.error(e.message)}<\/script>
+</body></html>`;
     }
 
-    // Theme hue controls
-    function applyHue(v){ document.documentElement.style.setProperty('--hue', v); }
-    function pulse(){ cancelPulse(); const loop=()=>{ tHue+=0.7; const v=(parseFloat(hueRange.value)+Math.sin(tHue/20)*30+360)%360; applyHue(v.toFixed(1)); rafHue=requestAnimationFrame(loop); }; rafHue=requestAnimationFrame(loop); }
-    function cancelPulse(){ if(rafHue) cancelAnimationFrame(rafHue); rafHue=null; }
+    function clearLog(){ consoleLog.innerHTML=''; }
+    function appendLog(msg, isErr=false){ const d=document.createElement('div'); d.textContent=msg; if(isErr) d.className='log-err'; consoleLog.appendChild(d); consoleLog.scrollTop=consoleLog.scrollHeight; }
 
-    // ---------- Tests ----------
-    function assert(name, pass, extra){ log(`${pass?'✅':'❌'} ${name}${extra? ' — '+extra:''}`, !pass); }
-    function runTests(){
-      // Static tests on builder
-      const doc = buildDoc();
-      assert('injects CSS', doc.includes('<style>') && doc.includes(cssEditor.value.slice(0,10)));
-      assert('injects HTML', doc.includes(htmlEditor.value.trim().slice(0,8)));
-      assert('injects JS', doc.includes(jsEditor.value.trim().slice(0,8)));
-      assert('captures console', doc.includes("__IDE__:'console'"));
-      assert('reports canvas size', doc.includes("__IDE__:'canvas'"));
+    window.addEventListener('message', e=>{
+      const d=e.data||{};
+      if(d.__IDE__==='console') appendLog(d.msg, d.type==='err');
+      if(d.__IDE__==='size' && d.w>0 && d.h>0){ innerW=d.w; innerH=d.h; scaleIframe(); }
+    });
 
-      // Runtime test: wait briefly for canvas postMessage
-      let gotSize=false; const onMsg=(e)=>{ if(e?.data?.__IDE__==='canvas'){ gotSize=true; window.removeEventListener('message', onMsg); assert('preview reported canvas size (runtime)', true); } };
-      window.addEventListener('message', onMsg);
-      if(currentMode()!=='preview') switchMode('preview');
-      run();
-      setTimeout(()=>{ if(!gotSize){ assert('preview reported canvas size (runtime)', false, 'no message in 1500ms'); window.removeEventListener('message', onMsg);} }, 1500);
+    function run(){
+      clearLog();
+      const js=codeArea.value;
+      const doc=buildDoc(js);
+      const blob=new Blob([doc],{type:'text/html'});
+      const url=URL.createObjectURL(blob);
+      preview.onload=()=>{ URL.revokeObjectURL(url); };
+      preview.src=url;
     }
+
+    runBtn.addEventListener('click',()=>{ document.querySelector('[data-tab="preview"]').click(); run(); });
+    codeArea.addEventListener('input',()=>{ if(autoRun.checked && document.querySelector('.tab.active').dataset.tab==='preview') run(); });
+
+    exportBtn.addEventListener('click',()=>{
+      const content = buildDoc(codeArea.value);
+      const blob=new Blob([content],{type:'text/html'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url; a.download='web-game.html'; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    });
+
+    // First render & initial scale
+    document.querySelector('[data-tab="preview"]').click();
+    run();
   </script>
 </body>
 </html>
