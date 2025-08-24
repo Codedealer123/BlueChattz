@@ -8,24 +8,32 @@
   	import { BlinkDetector } from "./blink-detector.js";
 
   	const detector = new BlinkDetector();
+	const EC = document.getElementById("EyeClose");
+	const EO = document.getElementById("EyeOpen");
+	const BD = document.getElementById("BlinkDuration");
 
   	await detector.init();
   	detector.start();
 
   	window.addEventListener("eyeclose", e => {
    	 console.log("Eye closed", e.detail.timestamp);
+	 EC.textContent("Eye Close: True");
+	 EO.textContent("Eye Open: False");
   	});
 
   	window.addEventListener("eyeopen", e => {
     	console.log("Eye open", e.detail.timestamp);
+		EO.textContent("Eye Open: True");
+		EC.textContent("Eye Close: False");
   	});
 
   	window.addEventListener("blink", e => {
    	 console.log("Blink lasted", e.detail.duration, "ms");
+	 BD.textContent("Blink Duration: " + e.detail.duration, + " ms");
   	});
-	</script>
+  </script>
 
-	<h1 id="EyeClose">Eye Close: False</h1>
+  <h1 id="EyeClose">Eye Close: False</h1>
   <h1 id="EyeOpen">Eye Open: True</h1>
   <h1 id="BlinkDuration">Blink Duration: 0</h1>
 </body>
