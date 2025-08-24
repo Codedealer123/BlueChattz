@@ -2,39 +2,197 @@
 <html>
 <head>
   <title>Blink Detection</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    #status {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .status-box {
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .eye-closed { background-color: #ffebee; color: #c62828; }
+    .eye-open { background-color: #e8f5e8; color: #2e7d32; }
+    .blink-info { background-color: #e3f2fd; color: #1565c0; }
+    #video {
+      width: 100%;
+      max-width: 640px;
+      height: auto;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
-  <script type="module">
-  	import { BlinkDetector } from "./blink-detector.js";
+  <h1>Blink Detection System</h1>
+  <video id="video" autoplay muted playsinline></video>
+  
+  <div id="status">
+    <div id="EyeClose" class="status-box eye-open">Eyes: Open</div>
+    <div id="EyeOpen" class="status-box eye-open">Status: Monitoring</div>
+    <div id="BlinkDuration" class="status-box blink-info">Blink Duration: 0 ms</div>
+  </div>
 
-  	const detector = new BlinkDetector();
-	const EC = document.getElementById("EyeClose");
-	const EO = document.getElementById("EyeOpen");
-	const BD = document.getElementById("BlinkDuration");
+  <script>
+    // BlinkDetector class - converted from module to regular class
+    class BlinkDetector {
+      constructor(opts = {}) {
+        this.video = document.getElementById("video");
+        
+        this.detector = null;
+        this.running = false;
+        
+        this.eyesClosed = false;
+        this.closedStart = 0;
+        
+        // thresholds (can be tuned or auto-calibrated later)
+        this.closeThresh = opts.closeThresh || 0.18;
+        this.openThresh  = opts.openThresh  || 0.22;
+        
+        this.minBlinkMs  = opts.minBlinkMs  || 50; // ignore microblinks
+      }
+      
+      async init() {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" }
+        });
+        this.video.srcObject = stream;
+        
+        await new Promise(res => { this.video.onloadedmetadata = () => res(); });
+        
+        await tf.setBackend("webgl");
+        await tf.ready();
+        
+        this.detector = await faceLandmarksDetection.createDetector(
+          faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh, 
+          {
+            runtime: "tfjs",
+            refineLandmarks: true,
+            maxFaces: 1
+          }
+        );
+      }
+      
+      dist(a, b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      }
+      
+      computeEAR(lm, side) {
+        let H, V1, V2;
+        if (side === "left") {
+          H = [lm[33], lm[133]];
+          V1 = [lm[159], lm[145]];
+          V2 = [lm[160], lm[144]];
+        } else {
+          H = [lm[362], lm[263]];
+          V1 = [lm[386], lm[374]];
+          V2 = [lm[385], lm[373]];
+        }
+        const horiz = this.dist(H[0], H[1]);
+        const vert = (this.dist(V1[0], V1[1]) + this.dist(V2[0], V2[1])) / 2;
+        return vert / (horiz || 1e-6);
+      }
+      
+      async loop() {
+        if (!this.running) return;
+        
+        const faces = await this.detector.estimateFaces(this.video, { flipHorizontal: true });
+        
+        if (faces.length > 0) {
+          const lm = faces[0].keypoints;
+          const leftEAR = this.computeEAR(lm, "left");
+          const rightEAR = this.computeEAR(lm, "right");
+          const ear = (leftEAR + rightEAR) / 2;
+          
+          const now = performance.now();
+          
+          if (!this.eyesClosed && ear < this.closeThresh) {
+            this.eyesClosed = true;
+            this.closedStart = now;
+            window.dispatchEvent(new CustomEvent("eyeclose", { detail: { timestamp: now } }));
+          }
+          
+          if (this.eyesClosed && ear > this.openThresh) {
+            this.eyesClosed = false;
+            const duration = now - this.closedStart;
+            window.dispatchEvent(new CustomEvent("eyeopen", { detail: { timestamp: now } }));
+            
+            if (duration > this.minBlinkMs) {
+              window.dispatchEvent(new CustomEvent("blink", {
+                detail: {
+                  duration: Math.round(duration),
+                  timestamp: now
+                }
+              }));
+            }
+          }
+        }
+        
+        requestAnimationFrame(() => this.loop());
+      }
+      
+      start() {
+        if (this.running) return;
+        this.running = true;
+        this.loop();
+      }
+      
+      stop() {
+        this.running = false;
+      }
+    }
 
-  	await detector.init();
-  	detector.start();
+    // Main application code
+    async function initBlinkDetection() {
+      try {
+        const detector = new BlinkDetector();
+        const EC = document.getElementById("EyeClose");
+        const EO = document.getElementById("EyeOpen");
+        const BD = document.getElementById("BlinkDuration");
 
-  	window.addEventListener("eyeclose", e => {
-   	 console.log("Eye closed", e.detail.timestamp);
-	 EC.textContent = "Eye Close: True";
-	 EO.textContent = "Eye Open: False";
-  	});
+        await detector.init();
+        detector.start();
 
-  	window.addEventListener("eyeopen", e => {
-    	console.log("Eye open", e.detail.timestamp);
-		EO.textContent = "Eye Open: True";
-		EC.textContent = "Eye Close: False";
-  	});
+        window.addEventListener("eyeclose", e => {
+          console.log("Eye closed", e.detail.timestamp);
+          EC.textContent = "Eyes: Closed";
+          EC.className = "status-box eye-closed";
+          EO.textContent = "Status: Eyes Closed";
+        });
 
-  	window.addEventListener("blink", e => {
-   	 console.log("Blink lasted", e.detail.duration, "ms");
-	 BD.textContent = "Blink Duration: " + e.detail.duration, + " ms";
-  	});
+        window.addEventListener("eyeopen", e => {
+          console.log("Eye open", e.detail.timestamp);
+          EC.textContent = "Eyes: Open";
+          EC.className = "status-box eye-open";
+          EO.textContent = "Status: Eyes Open";
+        });
+
+        window.addEventListener("blink", e => {
+          console.log("Blink lasted", e.detail.duration, "ms");
+          BD.textContent = "Blink Duration: " + e.detail.duration + " ms";
+        });
+        
+        console.log("Blink detection initialized successfully!");
+        
+      } catch (error) {
+        console.error("Error initializing blink detection:", error);
+        document.body.innerHTML += `<div style="color: red; padding: 20px;">Error: ${error.message}</div>`;
+      }
+    }
+
+    // Wait for all scripts to load, then initialize
+    window.addEventListener('load', initBlinkDetection);
   </script>
-
-  <h1 id="EyeClose">Eye Close: False</h1>
-  <h1 id="EyeOpen">Eye Open: True</h1>
-  <h1 id="BlinkDuration">Blink Duration: 0</h1>
 </body>
 </html>
