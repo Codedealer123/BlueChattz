@@ -4,6 +4,26 @@
   <title>Blink Detection</title>
 </head>
 <body>
-  
+  <script type="module">
+  	import { BlinkDetector } from "./blink-detector.js";
+
+  	const detector = new BlinkDetector();
+
+  	await detector.init();
+  	detector.start();
+
+  	window.addEventListener("eyeclose", e => {
+   	 console.log("Eye closed", e.detail.timestamp);
+  	});
+
+  	window.addEventListener("eyeopen", e => {
+    	console.log("Eye open", e.detail.timestamp);
+  	});
+
+  	window.addEventListener("blink", e => {
+   	 console.log("Blink lasted", e.detail.duration, "ms");
+  	});
+	</script>
+
 </body>
 </html>
