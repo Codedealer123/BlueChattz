@@ -79,7 +79,7 @@
           faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh, 
           {
             runtime: "tfjs",
-            refineLandmarks: true,
+            refineLandmarks: false, // Disable for better performance
             maxFaces: 1
           }
         );
@@ -108,39 +108,48 @@
       async loop() {
         if (!this.running) return;
         
-        const faces = await this.detector.estimateFaces(this.video, { flipHorizontal: true });
-        
-        if (faces.length > 0) {
-          const lm = faces[0].keypoints;
-          const leftEAR = this.computeEAR(lm, "left");
-          const rightEAR = this.computeEAR(lm, "right");
-          const ear = (leftEAR + rightEAR) / 2;
+        try {
+          const faces = await this.detector.estimateFaces(this.video, { flipHorizontal: true });
           
-          const now = performance.now();
-          
-          if (!this.eyesClosed && ear < this.closeThresh) {
-            this.eyesClosed = true;
-            this.closedStart = now;
-            window.dispatchEvent(new CustomEvent("eyeclose", { detail: { timestamp: now } }));
-          }
-          
-          if (this.eyesClosed && ear > this.openThresh) {
-            this.eyesClosed = false;
-            const duration = now - this.closedStart;
-            window.dispatchEvent(new CustomEvent("eyeopen", { detail: { timestamp: now } }));
+          if (faces.length > 0) {
+            const lm = faces[0].keypoints;
+            const leftEAR = this.computeEAR(lm, "left");
+            const rightEAR = this.computeEAR(lm, "right");
+            const ear = (leftEAR + rightEAR) / 2;
             
-            if (duration > this.minBlinkMs) {
-              window.dispatchEvent(new CustomEvent("blink", {
-                detail: {
-                  duration: Math.round(duration),
-                  timestamp: now
-                }
-              }));
+            const now = performance.now();
+            
+            if (!this.eyesClosed && ear < this.closeThresh) {
+              this.eyesClosed = true;
+              this.closedStart = now;
+              window.dispatchEvent(new CustomEvent("eyeclose", { detail: { timestamp: now } }));
+            }
+            
+            if (this.eyesClosed && ear > this.openThresh) {
+              this.eyesClosed = false;
+              const duration = now - this.closedStart;
+              window.dispatchEvent(new CustomEvent("eyeopen", { detail: { timestamp: now } }));
+              
+              if (duration > this.minBlinkMs) {
+                window.dispatchEvent(new CustomEvent("blink", {
+                  detail: {
+                    duration: Math.round(duration),
+                    timestamp: now
+                  }
+                }));
+              }
             }
           }
+        } catch (error) {
+          console.warn("Detection error:", error);
         }
         
-        requestAnimationFrame(() => this.loop());
+        // Reduce frame rate to ~15fps to prevent performance issues
+        setTimeout(() => {
+          if (this.running) {
+            requestAnimationFrame(() => this.loop());
+          }
+        }, 66); // ~15fps instead of 60fps
       }
       
       start() {
