@@ -143,14 +143,6 @@
         } catch (error) {
           console.warn("Detection error:", error);
         }
-        
-        // Reduce frame rate to ~15fps to prevent performance issues
-        setTimeout(() => {
-          if (this.running) {
-            requestAnimationFrame(() => this.loop());
-          }
-        }, 66); // ~15fps instead of 60fps
-      }
       
       start() {
         if (this.running) return;
